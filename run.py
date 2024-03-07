@@ -1,8 +1,11 @@
+import os.path
+
 import bpy
 import numpy as np
 import json
 import sys
 import math
+from cv_pipeline import process_on_image
 
 
 def read_from_file(file_path):
@@ -84,19 +87,19 @@ def create_mat(rgb_color):
     return mat
 
 
-def create_floor_plan():
+def render():
     parent, parent_mesh = init_object("Floorplan" + str(0))
 
-    path_to_wall_faces_file = "E:/RasterScan/Floor-Plan-3D-Creation/temp/" + "wall_faces"
-    path_to_wall_verts_file = "E:/RasterScan/Floor-Plan-3D-Creation/temp/" + "wall_verts"
+    path_to_wall_faces_file = "./data/" + "wall_faces"
+    path_to_wall_verts_file = "./data/" + "wall_verts"
 
-    path_to_floor_faces_file = "E:/RasterScan/Floor-Plan-3D-Creation/temp/" + "floor_faces"
-    path_to_floor_verts_file = "E:/RasterScan/Floor-Plan-3D-Creation/temp/" + "floor_verts"
+    path_to_floor_faces_file = "./data/" + "floor_faces"
+    path_to_floor_verts_file = "./data/" + "floor_verts"
 
-    path_to_rooms_faces_file = "E:/RasterScan/Floor-Plan-3D-Creation/temp/" + "rooms_faces"
-    path_to_rooms_verts_file = "E:/RasterScan/Floor-Plan-3D-Creation/temp/" + "rooms_verts"
+    path_to_rooms_faces_file = "./data/" + "rooms_faces"
+    path_to_rooms_verts_file = "./data/" + "rooms_verts"
 
-    path_to_transform_file = "E:/RasterScan/Floor-Plan-3D-Creation/temp/" + "transform"
+    path_to_transform_file = "./data/" + "transform"
 
     transform = read_from_file(path_to_transform_file)
 
@@ -112,21 +115,21 @@ def create_floor_plan():
     verts = read_from_file(path_to_wall_verts_file)
     faces = read_from_file(path_to_wall_faces_file)
 
-    boxcount = 0
-    wallcount = 0
+    box_count = 0
+    wall_count = 0
 
     wall_parent, wall_parent_mesh = init_object("Walls")
 
     for box in verts:
-        boxname = "Box" + str(boxcount)
+        boxname = "Box" + str(box_count)
         for wall in box:
-            wallname = "Wall" + str(wallcount)
+            wall_name = "Wall" + str(wall_count)
 
-            obj = create_custom_mesh(boxname + wallname, wall, faces, pos=pos, rot=rot, cen=cen)
+            obj = create_custom_mesh(boxname + wall_name, wall, faces, pos=pos, rot=rot, cen=cen)
             obj.parent = wall_parent
 
-            wallcount += 1
-        boxcount += 1
+            wall_count += 1
+        box_count += 1
 
     wall_parent.parent = parent
 
@@ -150,18 +153,23 @@ def create_floor_plan():
     room_parent.parent = parent
 
 
-def main(argv):
+def main(image_file):
     objs = bpy.data.objects
     objs.remove(objs["Cube"], do_unlink=True)
 
-    create_floor_plan()
+    process_on_image(image_file)
 
-    bpy.ops.wm.save_as_mainfile(filepath="E:/3D_Mesh.blend")
+    render()
+
+    file_name = os.path.splitext(os.path.basename(image_file))[0]
+    dir_name = os.path.dirname(os.path.abspath(image_file))
+    bpy.ops.wm.save_as_mainfile(filepath=f'{dir_name}/{file_name}.blend')
 
     exit(0)
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    src_file = './images/img3.jpg'
+    main(src_file)
 
 
